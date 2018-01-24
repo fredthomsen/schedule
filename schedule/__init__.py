@@ -179,6 +179,7 @@ class Job(object):
         self.next_run = None  # datetime of the next run
         self.period = None  # timedelta between runs, only valid for
         self.start_day = None  # Specific day of the week to start on
+        self.final_run = None  # optional time of final run
         self.tags = set()  # unique set of tags for the job
         self.scheduler = scheduler  # scheduler to register with
 
@@ -368,6 +369,26 @@ class Job(object):
         self.latest = latest
         return self
 
+    def until(self, datetime_str):
+        """
+        Schedule job will run until the specified time string.
+
+        :param datetime_str: A string in `HH:MM` format for same day or
+            `YYYY-MM-DD HH:MM` for a different day representing the latest
+            time a job can be run
+        :return: The invoked job instance
+        """
+        if ' ' in datetime_str:
+            fmt = "%Y-%m-%d %H:%M"
+            self.final_run = datetime.datetime.strptime(datetime_str, fmt)
+        else:
+            hour, minute = datetime_str.split(':')
+            today = datetime.datetime.today()
+            self.final_run = datetime.datetime(
+                today.year, today.month, today.day, int(hour), int(minute)
+            )
+        return self
+
     def do(self, job_func, *args, **kwargs):
         """
         Specifies the job_func that should be called every time the
@@ -464,6 +485,9 @@ class Job(object):
             # Let's see if we will still make that time we specified today
             if (self.next_run - datetime.datetime.now()).days >= 7:
                 self.next_run -= self.period
+
+        if self.final_run and self.next_run > self.final_run:
+            self.next_run = datetime.datetime.max
 
 
 # The following methods are shortcuts for not having to

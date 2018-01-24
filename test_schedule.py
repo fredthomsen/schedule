@@ -120,6 +120,10 @@ class SchedulerTests(unittest.TestCase):
             assert every().friday.do(mock_job).next_run.day == 8
             assert every().saturday.do(mock_job).next_run.day == 9
             assert every().sunday.do(mock_job).next_run.day == 10
+            assert every().minute.until('12:17').do(
+                mock_job).next_run.minute == 16
+            assert every().minute.until('2010-01-06 09:00').do(
+                mock_job).next_run.year == 9999
 
     def test_run_all(self):
         mock_job = make_mock_job()
